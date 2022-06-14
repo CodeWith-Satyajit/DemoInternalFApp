@@ -1,0 +1,92 @@
+_schema-version: "3.2"
+ID: DemoManaged02
+version: 0.0.1
+modules:
+- name: DemoManaged02-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: DemoManaged02-destination-service
+    parameters:
+      content-target: true
+  - name: DemoManaged02_html_repo_host
+    parameters:
+      service-key:
+        name: DemoManaged02_html_repo_host-key
+  - name: uaa_DemoManaged02
+    parameters:
+      service-key:
+        name: uaa_DemoManaged02-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: DemoManaged02_DemoManaged02_html_repo_host
+          ServiceInstanceName: DemoManaged02-html5-app-host-service
+          ServiceKeyName: DemoManaged02_html_repo_host-key
+          sap.cloud.service: DemoManaged02
+        - Authentication: OAuth2UserTokenExchange
+          Name: DemoManaged02_uaa_DemoManaged02
+          ServiceInstanceName: DemoManaged02-xsuaa-service
+          ServiceKeyName: uaa_DemoManaged02-key
+          sap.cloud.service: DemoManaged02
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: DemoManaged02-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: DemoManaged02_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - nsdemomanaged02demomanaged02.zip
+      name: nsdemomanaged02demomanaged02
+      target-path: resources/
+- name: nsdemomanaged02demomanaged02
+  type: html5
+  path: demomanaged02
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: DemoManaged02-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: DemoManaged02-destination-service
+    service-plan: lite
+- name: DemoManaged02_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: DemoManaged02-html5-app-host-service
+    service-plan: app-host
+- name: uaa_DemoManaged02
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: DemoManaged02-xsuaa-service
+    service-plan: application
+parameters:
+  deploy_mode: html5-repo
